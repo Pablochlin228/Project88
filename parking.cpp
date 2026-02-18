@@ -51,55 +51,59 @@ void Parking(Car car)
 }
 
 //2
-std::counting_semaphore<2> control(2);
-std::mutex m;
-
-void Worker(int id)
-{
-	std::cout << "Thread " << id << "is trying to write his line in file!" << std::endl;
-
-	control.acquire();
-	m.lock();
-	std:: ofstream out("log.txt", std::ios::app);
-	if (out.is_open())
-	{
-		out << "Thread " << id << "write information" << std::endl;
-		out.close();
-	}
-	else
-	{
-		std::cout << "Could not open the file" << std::endl;
-	}
-	m.unlock();
-	control.release();
-}
+//std::counting_semaphore<2> control(2);
+//std::mutex m;
+//
+//void Worker(int id)
+//{
+//	std::cout << "Thread " << id << "is trying to write his line in file!" << std::endl;
+//
+//	control.acquire();
+//	m.lock();
+//	std:: ofstream out("log.txt", std::ios::app);
+//	if (out.is_open())
+//	{
+//		out << "Thread " << id << "write information" << std::endl;
+//		out.close();
+//	}
+//	else
+//	{
+//		std::cout << "Could not open the file" << std::endl;
+//	}
+//	m.unlock();
+//	control.release();
+//}
 
 //3
+std::counting_semaphore<2> control(2);
 int data[20] = { 0 };
 int nextIndex = 0;
-std::mutex dataMutex;
 
 void FillArray(int id)
 {
-	while (true)
+	using namespace std::chrono;
+
+	for (int i = 1; i < 5; i++)
 	{
 		control.acquire();
 
-		dataMutex.lock();
+		int currentIndex = -1;
 
-		if (nextIndex >= 20)
 		{
-			control.release();
-			break;
+
+			if (nextIndex >= 20)
+			{
+				control.release();
+			}
+
+			currentIndex = nextIndex;
+			data[currentIndex] = id;
+			nextIndex++;
+
 		}
 
-		int currantIndex = nextIndex;
-		data[currantIndex] = id;
-		nextIndex++;
-
-		dataMutex.unlock();
-
 		control.release();
+		std::this_thread::sleep_for(milliseconds(10));
 	}
 }
 
@@ -123,14 +127,14 @@ int main()
 	std::cout << "Parking is free now!!!" << std::endl;
 
 	//2
-	std::vector<std::thread> writers;
+	/*std::vector<std::thread> writers;
 	for (int i = 1; i <= 6; ++i) {
 		writers.emplace_back(Worker, i);
 	}
 
 	for (auto& t : writers) t.join();
 
-	std::cout << "Task is done!!!" << std::endl;
+	std::cout << "Task is done!!!" << std::endl;*/
 
 	//3
 	std::vector<std::thread> numbers;
