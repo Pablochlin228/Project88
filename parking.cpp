@@ -76,33 +76,31 @@ void Worker(int id)
 
 //3
 int data[20] = { 0 };
-int countGlobal = 1;
-int countLocal = 0;
+int nextIndex = 0;
+std::mutex dataMutex;
 
 void FillArray(int id)
 {
-
-	control.acquire();
-
-	for (int countGlobal = 0; countGlobal <= 5;)
+	while (true)
 	{
-		for (int countLocal = 0; countLocal < 5;)
+		control.acquire();
+
+		dataMutex.lock();
+
+		if (nextIndex >= 20)
 		{
-			if (data[countLocal] == 0)
-			{
-				data[countLocal] = id;
-				break;
-			}
+			control.release();
+			break;
 		}
-	}
 
-	if (countLocal == 4)
-	{
-		countLocal = 0;
-		countGlobal++;
-	}
+		int currantIndex = nextIndex;
+		data[currantIndex] = id;
+		nextIndex++;
 
-	control.release();
+		dataMutex.unlock();
+
+		control.release();
+	}
 }
 
 int main()
@@ -137,7 +135,7 @@ int main()
 	//3
 	std::vector<std::thread> numbers;
 	for (int i = 1; i <= 5; ++i) {
-		numbers.emplace_back(Worker, i);
+		numbers.emplace_back(FillArray, i);
 	}
 
 	for (auto& t : numbers) t.join();
